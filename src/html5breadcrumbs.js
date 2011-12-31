@@ -29,7 +29,7 @@ var html5breadcrumbs = function(){
                 }); // okay! log that URL!
                 var head = document.getElementsByTagName('head')[0],
                     style = document.createElement('style'),
-                    rules = document.createTextNode('h1 { background: red; }');
+                    rules = document.createTextNode('#html5breadcrumb_toggle { background: red; }');
 
                 style.type = 'text/css';
                 if(style.styleSheet)
