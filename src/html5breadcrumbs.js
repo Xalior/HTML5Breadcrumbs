@@ -29,8 +29,8 @@ var html5breadcrumbs = function(){
                 }); // okay! log that URL!
                 var head = document.getElementsByTagName('head')[0],
                     style = document.createElement('style'),
-                    rules = document.createTextNode('#html5breadcrumb_toggle{background:rgba(0,0,0,0.75);border-bottom:1px solid rgba(255,255,255,0.75);border-left:1px solid rgba(255,255,255,0.75);border-radius:0 0 10px 10px;border-right:1px solid rgba(255,255,255,0.75);border-top:none;color:rgba(255,255,255,0.75);font-size:30px;height:30px;position:absolute;right:60px;text-align:center;top:0;vertical-align:middle;width:30px;padding-top: 5px}');
-
+                    rules = document.createTextNode('#html5breadcrumb_toggle{cursor: pointer;background:rgba(0,0,0,0.75);border-bottom:1px solid rgba(255,255,255,0.75);border-left:1px solid rgba(255,255,255,0.75);border-radius:0 0 10px 10px;border-right:1px solid rgba(255,255,255,0.75);border-top:none;color:rgba(255,255,255,0.75);font-size:30px;height:30px;position:absolute;right:60px;text-align:center;top:0;vertical-align:middle;width:30px;padding-top: 5px}');
+                style.id = "html5breadcrumb_style";
                 style.type = 'text/css';
                 if(style.styleSheet)
                     style.styleSheet.cssText = rules.nodeValue;
