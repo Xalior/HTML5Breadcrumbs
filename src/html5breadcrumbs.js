@@ -29,7 +29,7 @@ var html5breadcrumbs = function(){
                 }); // okay! log that URL!
                 var head = document.getElementsByTagName('head')[0],
                     style = document.createElement('style'),
-                    rules = document.createTextNode('#html5breadcrumb_toggle { background: red; }');
+                    rules = document.createTextNode('#html5breadcrumb_toggle{background:rgba(0,0,0,0.75);border-bottom:1px solid rgba(255,255,255,0.75);border-left:1px solid rgba(255,255,255,0.75);border-radius:0 0 10px 10px;border-right:1px solid rgba(255,255,255,0.75);border-top:none;color:rgba(255,255,255,0.75);font-size:30px;height:30px;position:absolute;right:60px;text-align:center;top:0;vertical-align:middle;width:30px;padding-top: 5px}');
 
                 style.type = 'text/css';
                 if(style.styleSheet)
@@ -37,11 +37,29 @@ var html5breadcrumbs = function(){
                 else
                     style.appendChild(rules);
                 head.appendChild(style);
+                var body = document.getElementsByTagName('body')[0],
+                    button = document.createElement('div');
+                if( button.attachEvent ){
+                    button.attachEvent('onclick', 'html5breadcrumbs.show()');
+                } else {
+                    button.setAttribute('onclick', 'html5breadcrumbs.show()'); 
+                }
+                button.id = "html5breadcrumb_toggle";
+                button.innerHTML = "<span>+</span>";
+                body.appendChild(button);
             } else {
                 console.log("Error Could not create DB either the DB has exceeded its size limit or you are using the wrong browser.");
             }
 
             return this;
+        },
+
+        show: function() {
+            console.log("show");
+        },
+
+        hide: function() {
+            console.log("hide");
         },
 
         wipe: function() {
