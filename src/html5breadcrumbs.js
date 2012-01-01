@@ -9,6 +9,7 @@ var html5breadcrumbs = function(){
     var displayName = 'HTML5CRUMBS';
     var maxSize = 1024*1024*5; //Upto 5MB for logfiles....
     var db = null;
+    var ui = null;
 
     var defaultErrorHandle = function(tx,error){ console.log(error.message); }
     var defaultDataHandle = function(result){ console.log(result); }
@@ -17,20 +18,25 @@ var html5breadcrumbs = function(){
 
     return {
         go: function() {
-            var setupTable = function(tx,error) {
-                tx.executeSql("CREATE TABLE "+ dbTable + " (url TEXT, timestamp REAL)", [], function(result) {}, defaultErrorHandle);
-            }
-
             if (window.openDatabase) {
                 db = openDatabase(dbName, version, displayName, maxSize);
                 db.transaction(function(tx) {
                     var url = document.URL;
-                    tx.executeSql("INSERT INTO " + dbTable + " (url,timestamp) VALUES (?,?)",[url,now()],defaultDataHandle,defaultErrorHandle);
+                    var title = document.getElementsByTagName('title')[0];
+                    if(title) 
+                        title = title.innerHTML
+                    else
+                        title = "Untitled Page";
+                    var setupTable = function(tx,error) {
+                        tx.executeSql("CREATE TABLE "+ dbTable + " (url TEXT, timestamp REAL, title TEXT)", [], function(result) {}, defaultErrorHandle);
+                        tx.executeSql("INSERT INTO " + dbTable + " (url,timestamp, title) VALUES (?,?,?)",[url,now(),title],html5breadcrumbs.refresh,defaultErrorHandle);
+                    }
+                    tx.executeSql("INSERT INTO " + dbTable + " (url,timestamp, title) VALUES (?,?,?)",[url,now(),title],html5breadcrumbs.refresh,setupTable);
                 }); // okay! log that URL!
                 var head = document.getElementsByTagName('head')[0],
                     style = document.createElement('style'),
-                    rules = document.createTextNode('#html5breadcrumb_toggle{cursor: pointer;background:rgba(0,0,0,0.75);border-bottom:1px solid rgba(255,255,255,0.75);border-left:1px solid rgba(255,255,255,0.75);border-radius:0 0 10px 10px;border-right:1px solid rgba(255,255,255,0.75);border-top:none;color:rgba(255,255,255,0.75);font-size:30px;height:30px;position:absolute;right:60px;text-align:center;top:0;vertical-align:middle;width:30px;padding-top: 5px}');
-                style.id = "html5breadcrumb_style";
+                    rules = document.createTextNode('#html5breadcrumbs_show{cursor: pointer;background:rgba(0,0,0,0.75);border-bottom:2px solid rgba(255,255,255,0.75);border-left:2px solid rgba(255,255,255,0.75);border-radius:0 0 10px 10px;border-right:2px solid rgba(255,255,255,0.75);border-top:none;color:rgba(255,255,255,0.75);font-size:30px;height:30px;position:absolute;right:60px;text-align:center;top:0;vertical-align:middle;width:30px;padding-top: 5px;}#html5breadcrumbs_ui{display:none;width:100%;height:100%;background-color:rgba(0,0,0,0.8);position:absolute;top:0;left:0;z-index:10240}#html5breadcrumbs_ui>div{width:600px;height:600px;margin:auto;padding-top:5px;display:block;border:#aaa 2px solid;background:rgba(0,0,0,0.9);margin-top:30px;border-radius:10px;}#html5breadcrumbs_data{height:370px;width:600px;overflow:auto;display:block;}#html5breadcrumbs_display{width:600px;height:140px;display:block;}#html5breadcrumbs_ui>div>span{height:64px;display:block;color:transparent;background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAABACAMAAADCg1mMAAAAYFBMVEUAAAAbCAI2EgYkJCRSGwppIwxISEhVVVVoaGh+fn6WNBOjOBKxPBXaTBndUhnhWRnmZBjpczLddFLtjFnpmXaDg4ORkZG3t7fhnIfiq5rys5Lmw7nZ2dn42cnr6+v+/v4XcUo9AAADAklEQVR4nO2b63aqMBBG0YJtKRe5WbnZ93/LEq5hJgngiSunA/uXC8YwbBbwCdGyLMvxn8QiwiHgyf3/Mt24Ls6HADlBKIaUgJNCQHgVw9Y5phvXxiFg7wK8zQLaa8DZdN/a+DoEPCXgZLpvbUxJKEYkkIgJCFix6bb1MQl4IH4gxSGgF+CZblsfUxQslwUkw12QTBA8BGwTENHLQVwUzJcFEAyCnID7egHJ7RPwxg8JVwpK2poLauajWfq+oWTVphouihIPClgIQiwHFUjNrFG0Fpe0NTe0d1Wz9HtDyapNNdwUJWMUjA8BHdHOBDhQQKwWEJAV4K8TwL5d6Ol8hYCWYcFlWLB5GFwygQSkywJySgKmJFR1Au67FYCiIDxvkkOAVMBnlmUfLxBQNePesp72wwMNU2WQG99Nxg8xwmUleRaGAhSnwAyNAljJ27D9SjwMZtNdQJGFDwFzHm0OEnf+lwWgKCgTUP8ZAe9wXCyAK3mNgKWuNghQlKyqEcJK+o/uICCQPRWuuz0o2yT8tICXReF/FSCdIjAGoV5AsVsBP7QF2FMS6kglAlL22RdvEgWhWTr5NimANYAfLHECUBS8AwFRLyBRCFB3fjEpQF4iE1ACAQlxASgLywRcyQu4iwWkegSYygHbBTyAgIIT0L4bt5XJcv2lWcMwaAQ8zPKWUBQs02gUEKVFnwjrUcCZuoCGKo+D8JoU9fQVugJcgQBGPf9Kl4RZnY7O/ycBYxQMlD+GuNkRqjdN1rp3WgwNw2h4NaaYIyEVQAx7nYAuCfukJgd0cPOF47wUC6jT6LoHAQ1RmgMBdZGMbwVYhWu6Ye34kPhe9gJYJuBfi7C1lGZHdCAB7I4Q5zV/6HcnwBe+GuuSsOl+tSOZLisTQGee8MBaAWGbAnYqIOz33qeXg6SPRUN46MkKsFUCwiCYLyY0T3ji7Aj+ORLCQ9/g2nT+KQA42S7YWbjznkPv8gc4O7I/kHguvbu/BNtFZ4NL/9DPOTnT2eA5uzn0c9rLIuFLHuMXPrPP7USuq8MAAAAASUVORK5CYII=");background-repeat: no-repeat;}');
+                style.id = "html5breadcrumbs_style";
                 style.type = 'text/css';
                 if(style.styleSheet)
                     style.styleSheet.cssText = rules.nodeValue;
@@ -44,9 +50,18 @@ var html5breadcrumbs = function(){
                 } else {
                     button.setAttribute('onclick', 'html5breadcrumbs.show()'); 
                 }
-                button.id = "html5breadcrumb_toggle";
+                button.id = "html5breadcrumbs_show";
                 button.innerHTML = "<span>+</span>";
                 body.appendChild(button);
+                ui = document.createElement('div');
+                ui.id = "html5breadcrumbs_ui";
+                if( ui.attachEvent ){
+                    ui.attachEvent('onclick', 'html5breadcrumbs.hide()');
+                } else {
+                    ui.setAttribute('onclick', 'html5breadcrumbs.hide()');
+                }
+                ui.innerHTML = '<div onclick="html5breadcrumbs.stopEvent(evt)"><span>HTML5breadcrumbs</span><div id="html5breadcrumbs_display">GRAPH</div><div id="html5breadcrumbs_data">DATA</div></div>';
+                body.appendChild(ui);
             } else {
                 console.log("Error Could not create DB either the DB has exceeded its size limit or you are using the wrong browser.");
             }
@@ -54,12 +69,17 @@ var html5breadcrumbs = function(){
             return this;
         },
 
+        refresh: function() {
+            console.log("table refresh called");
+        },
+
         show: function() {
-            console.log("show");
+            ui.style.cssText="display: block !important;"; 
+            html5breadcrumbs.refresh();
         },
 
         hide: function() {
-            console.log("hide");
+           ui.style.cssText=""; 
         },
 
         wipe: function() {
@@ -67,9 +87,12 @@ var html5breadcrumbs = function(){
                 tx.executeSql("DELETE FROM " + dbTable ,[],defaultDataHandle,defaultErrorHandle);
             });
         },
-
+    
+        stopEvent: function(evt) {
+            evt.stopPropagation();
+            return false;
+        }
     }
-
 }().go();
 /*
  No, seriously, that's it. You don't need to do anything.
