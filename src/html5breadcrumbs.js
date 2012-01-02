@@ -105,7 +105,7 @@ var html5breadcrumbs = function(){
                     daycounts[5]++;                } else if (results.rows.item(i).timestamp > (thisdate-604800000)){
                     daycounts[6]++;                } else {
                     daycounts[7]++;                }
-                table_rows.push("<tr><td>"+results.rows.item(i).timestamp+"</td><td><a href=\""+results.rows.item(i).url+"\">"+results.rows.item(i).title+"</a><br /><span>"+results.rows.item(i).url+"</span></a></td></tr>");
+                table_rows.push("<tr><td>"+year+"/"+month+"/"+second+" "+hour+":"+minute+":"+second+"</td><td><a href=\""+results.rows.item(i).url+"\">"+results.rows.item(i).title+"</a><br /><span>"+results.rows.item(i).url+"</span></a></td></tr>");
             }
             table_rows.push("</tbody></table>");
             data.innerHTML = table_rows.join("");
