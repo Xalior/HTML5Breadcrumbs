@@ -15,6 +15,9 @@ var html5breadcrumbs = function(){
     var results = null;
     var daycounts = null;
 
+    var graphTimer;
+    var graphAnim = 0;
+
     var defaultErrorHandle = function(tx,error){ console.log(error.message); }
     var defaultDataHandle = function(result){ console.log(result); }
 
@@ -33,13 +36,13 @@ var html5breadcrumbs = function(){
                         title = "Untitled Page";
                     var setupTable = function(tx,error) {
                         tx.executeSql("CREATE TABLE "+ dbTable + " (url TEXT, timestamp REAL, title TEXT)", [], function(result) {}, defaultErrorHandle);
-                        tx.executeSql("INSERT INTO " + dbTable + " (url,timestamp, title) VALUES (?,?,?)",[url,now(),title],html5breadcrumbs.refresh,defaultErrorHandle);
+                        tx.executeSql("INSERT INTO " + dbTable + " (url,timestamp, title) VALUES (?,?,?)",[url,now(),title],function(result) {},defaultErrorHandle);
                     }
-                    tx.executeSql("INSERT INTO " + dbTable + " (url,timestamp, title) VALUES (?,?,?)",[url,now(),title],html5breadcrumbs.refresh,setupTable);
+                    tx.executeSql("INSERT INTO " + dbTable + " (url,timestamp, title) VALUES (?,?,?)",[url,now(),title],function(result) {},setupTable);
                 }); // okay! log that URL!
                 var head = document.getElementsByTagName('head')[0],
                     style = document.createElement('style'),
-                    rules = document.createTextNode('#html5breadcrumbs_show{cursor: pointer;background:rgba(0,0,0,0.75);border-bottom:2px solid rgba(255,255,255,0.75);border-left:2px solid rgba(255,255,255,0.75);border-radius:0 0 10px 10px;border-right:2px solid rgba(255,255,255,0.75);border-top:none;color:rgba(255,255,255,0.75);font-size:30px;height:30px;position:absolute;right:60px;text-align:center;top:0;vertical-align:middle;width:30px;padding-top: 5px;}#html5breadcrumbs_ui{display:none;width:100%;height:100%;background-color:rgba(0,0,0,0.8);position:absolute;top:0;left:0;z-index:10240}#html5breadcrumbs_ui>div{color:white;width:600px;height:600px;margin:auto;padding-top:5px;display:block;border:#aaa 2px solid;background:rgba(0,0,0,0.9);margin-top:30px;border-radius:10px;}#html5breadcrumbs_data{height:370px;width:600px;overflow:auto;display:block;}#html5breadcrumbs_display{width:600px;height:140px;display:block;}#html5breadcrumbs_ui>div>span{height:64px;display:block;color:transparent;background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAABACAMAAADCg1mMAAAAYFBMVEUAAAAbCAI2EgYkJCRSGwppIwxISEhVVVVoaGh+fn6WNBOjOBKxPBXaTBndUhnhWRnmZBjpczLddFLtjFnpmXaDg4ORkZG3t7fhnIfiq5rys5Lmw7nZ2dn42cnr6+v+/v4XcUo9AAADAklEQVR4nO2b63aqMBBG0YJtKRe5WbnZ93/LEq5hJgngiSunA/uXC8YwbBbwCdGyLMvxn8QiwiHgyf3/Mt24Ls6HADlBKIaUgJNCQHgVw9Y5phvXxiFg7wK8zQLaa8DZdN/a+DoEPCXgZLpvbUxJKEYkkIgJCFix6bb1MQl4IH4gxSGgF+CZblsfUxQslwUkw12QTBA8BGwTENHLQVwUzJcFEAyCnID7egHJ7RPwxg8JVwpK2poLauajWfq+oWTVphouihIPClgIQiwHFUjNrFG0Fpe0NTe0d1Wz9HtDyapNNdwUJWMUjA8BHdHOBDhQQKwWEJAV4K8TwL5d6Ol8hYCWYcFlWLB5GFwygQSkywJySgKmJFR1Au67FYCiIDxvkkOAVMBnlmUfLxBQNePesp72wwMNU2WQG99Nxg8xwmUleRaGAhSnwAyNAljJ27D9SjwMZtNdQJGFDwFzHm0OEnf+lwWgKCgTUP8ZAe9wXCyAK3mNgKWuNghQlKyqEcJK+o/uICCQPRWuuz0o2yT8tICXReF/FSCdIjAGoV5AsVsBP7QF2FMS6kglAlL22RdvEgWhWTr5NimANYAfLHECUBS8AwFRLyBRCFB3fjEpQF4iE1ACAQlxASgLywRcyQu4iwWkegSYygHbBTyAgIIT0L4bt5XJcv2lWcMwaAQ8zPKWUBQs02gUEKVFnwjrUcCZuoCGKo+D8JoU9fQVugJcgQBGPf9Kl4RZnY7O/ycBYxQMlD+GuNkRqjdN1rp3WgwNw2h4NaaYIyEVQAx7nYAuCfukJgd0cPOF47wUC6jT6LoHAQ1RmgMBdZGMbwVYhWu6Ye34kPhe9gJYJuBfi7C1lGZHdCAB7I4Q5zV/6HcnwBe+GuuSsOl+tSOZLisTQGee8MBaAWGbAnYqIOz33qeXg6SPRUN46MkKsFUCwiCYLyY0T3ji7Aj+ORLCQ9/g2nT+KQA42S7YWbjznkPv8gc4O7I/kHguvbu/BNtFZ4NL/9DPOTnT2eA5uzn0c9rLIuFLHuMXPrPP7USuq8MAAAAASUVORK5CYII=");background-repeat: no-repeat;}');
+                    rules = document.createTextNode('#html5breadcrumbs_show{cursor: pointer;background:rgba(0,0,0,0.75);border-bottom:2px solid rgba(255,255,255,0.75);border-left:2px solid rgba(255,255,255,0.75);border-radius:0 0 10px 10px;border-right:2px solid rgba(255,255,255,0.75);border-top:none;color:rgba(255,255,255,0.75);font-size:30px;height:30px;position:absolute;right:60px;text-align:center;top:0;vertical-align:middle;width:30px;padding-top: 5px;}#html5breadcrumbs_ui{display:none;width:100%;height:100%;background-color:rgba(0,0,0,0.8);position:absolute;top:0;left:0;z-index:10240}#html5breadcrumbs_ui>div{color:white;width:600px;height:600px;margin:auto;padding-top:5px;display:block;border:#aaa 2px solid;background:rgba(0,0,0,0.9);margin-top:30px;border-radius:10px;}#html5breadcrumbs_data{height:370px;width:600px;overflow:auto;display:block;}#html5breadcrumbs_display{width:600px;height:140px;display:block;}#html5breadcrumbs_ui>div>span{height:64px;display:block;color:transparent;background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAABACAMAAADCg1mMAAAAYFBMVEUAAAAbCAI2EgYkJCRSGwppIwxISEhVVVVoaGh+fn6WNBOjOBKxPBXaTBndUhnhWRnmZBjpczLddFLtjFnpmXaDg4ORkZG3t7fhnIfiq5rys5Lmw7nZ2dn42cnr6+v+/v4XcUo9AAADAklEQVR4nO2b63aqMBBG0YJtKRe5WbnZ93/LEq5hJgngiSunA/uXC8YwbBbwCdGyLMvxn8QiwiHgyf3/Mt24Ls6HADlBKIaUgJNCQHgVw9Y5phvXxiFg7wK8zQLaa8DZdN/a+DoEPCXgZLpvbUxJKEYkkIgJCFix6bb1MQl4IH4gxSGgF+CZblsfUxQslwUkw12QTBA8BGwTENHLQVwUzJcFEAyCnID7egHJ7RPwxg8JVwpK2poLauajWfq+oWTVphouihIPClgIQiwHFUjNrFG0Fpe0NTe0d1Wz9HtDyapNNdwUJWMUjA8BHdHOBDhQQKwWEJAV4K8TwL5d6Ol8hYCWYcFlWLB5GFwygQSkywJySgKmJFR1Au67FYCiIDxvkkOAVMBnlmUfLxBQNePesp72wwMNU2WQG99Nxg8xwmUleRaGAhSnwAyNAljJ27D9SjwMZtNdQJGFDwFzHm0OEnf+lwWgKCgTUP8ZAe9wXCyAK3mNgKWuNghQlKyqEcJK+o/uICCQPRWuuz0o2yT8tICXReF/FSCdIjAGoV5AsVsBP7QF2FMS6kglAlL22RdvEgWhWTr5NimANYAfLHECUBS8AwFRLyBRCFB3fjEpQF4iE1ACAQlxASgLywRcyQu4iwWkegSYygHbBTyAgIIT0L4bt5XJcv2lWcMwaAQ8zPKWUBQs02gUEKVFnwjrUcCZuoCGKo+D8JoU9fQVugJcgQBGPf9Kl4RZnY7O/ycBYxQMlD+GuNkRqjdN1rp3WgwNw2h4NaaYIyEVQAx7nYAuCfukJgd0cPOF47wUC6jT6LoHAQ1RmgMBdZGMbwVYhWu6Ye34kPhe9gJYJuBfi7C1lGZHdCAB7I4Q5zV/6HcnwBe+GuuSsOl+tSOZLisTQGee8MBaAWGbAnYqIOz33qeXg6SPRUN46MkKsFUCwiCYLyY0T3ji7Aj+ORLCQ9/g2nT+KQA42S7YWbjznkPv8gc4O7I/kHguvbu/BNtFZ4NL/9DPOTnT2eA5uzn0c9rLIuFLHuMXPrPP7USuq8MAAAAASUVORK5CYII=");background-repeat: no-repeat;}.html5breadcrumbs_url{color:#ccc;font-size:12px;float:right;}.html5breadcrumbs_date{width:120px;border-top:dotted 1px #999;}.html5breadcrumbs_datum{min-width:400px;border-top:dotted 1px #999;border-left:solid 1px #999;}');
                 style.id = "html5breadcrumbs_style";
                 style.type = 'text/css';
                 if(style.styleSheet)
@@ -64,7 +67,8 @@ var html5breadcrumbs = function(){
                 } else {
                     ui.setAttribute('onclick', 'html5breadcrumbs.hide()');
                 }
-                ui.innerHTML = '<div onclick="html5breadcrumbs.stopEvent(evt)"><span>HTML5breadcrumbs</span><div id="html5breadcrumbs_display">GRAPH</div><div id="html5breadcrumbs_data">DATA</div></div>';
+                ui.innerHTML = '<div onclick="html5breadcrumbs.stopEvent(evt)"><span>HTML5breadcrumbs</span><canvas width=600 height=160 id="html5breadcrumbs_display">This browser does not support the HTML5 Canvas tas.</canvas><div id="html5breadcrumbs_data">DATA</div></div>';
+
                 body.appendChild(ui);
             } else {
                 console.log("Error Could not create DB either the DB has exceeded its size limit or you are using the wrong browser.");
@@ -74,9 +78,8 @@ var html5breadcrumbs = function(){
         },
 
         refresh: function() {
-            console.log("table refresh called");
             db.transaction(function(tx) {
-                tx.executeSql("SELECT * FROM "+ dbTable +" ORDER BY timestamp", [], html5breadcrumbs.drawTable, defaultErrorHandle);
+                tx.executeSql("SELECT * FROM "+ dbTable +" ORDER BY timestamp DESC", [], html5breadcrumbs.drawTable, defaultErrorHandle);
             });
         },
 
@@ -105,14 +108,60 @@ var html5breadcrumbs = function(){
                     daycounts[5]++;                } else if (results.rows.item(i).timestamp > (thisdate-604800000)){
                     daycounts[6]++;                } else {
                     daycounts[7]++;                }
-                table_rows.push("<tr><td>"+year+"/"+month+"/"+day+" "+hour+":"+minute+":"+second+"</td><td><a href=\""+results.rows.item(i).url+"\">"+results.rows.item(i).title+"</a><br /><span>"+results.rows.item(i).url+"</span></a></td></tr>");
+                table_rows.push("<tr><td class=\"html5breadcrumbs_date\">"+year+"/"+month+"/"+day+" "+hour+":"+minute+":"+second+"</td><td class=\"html5breadcrumbs_datum\"><a href=\""+results.rows.item(i).url+"\">"+results.rows.item(i).title+"</a><span class=\"html5breadcrumbs_url\">"+results.rows.item(i).url+"</span></a></td></tr>");
             }
             table_rows.push("</tbody></table>");
             data.innerHTML = table_rows.join("");
+            if(!graph) {
+                graph = document.getElementById('html5breadcrumbs_display');
+                graph = graph.getContext("2d");
+            }
+            graphAnim = 0;
+            graphTimer = setInterval(html5breadcrumbs.drawGraph,2);
+
+        },
+
+        drawGraph: function() {
+            graph.fillStyle = "rgb(200,200,200)";
+            graphAnim++;
+            // Should I draw the bars?
+                if(graphAnim>74) {
+                    console.log(daycounts[0]);
+                }
+                if(graphAnim>142) {
+                    console.log(daycounts[1]);
+                }
+                if(graphAnim>210) {
+                    console.log(daycounts[2]);
+                }
+                if(graphAnim>278) {
+                    console.log(daycounts[3]);
+                }
+                if(graphAnim>346) {
+                    console.log(daycounts[4]);
+                }
+                if(graphAnim>414) {
+                    console.log(daycounts[5]);
+                }
+                if(graphAnim>484) {
+                    console.log(daycounts[6]);
+                }
+                if(graphAnim>550) {
+                    console.log(daycounts[7]);
+                }
+            if(graphAnim<550) {
+                graph.fillRect(graphAnim+40,121,1,1);
+                if(graphAnim/5==Math.floor(graphAnim/5))
+                    graph.fillRect(40,121-(graphAnim/5),1,1);
+            } else if (graphAnim=661) {
+                graphAnim=0;
+                clearInterval(graphTimer);
+            }
         },
 
         show: function() {
-            ui.style.cssText="display: block !important;"; 
+            ui.style.cssText="display: block !important;";
+            html5breadcrumbs.refresh();
         },
 
         hide: function() {
